@@ -22,6 +22,8 @@ const agents = atom({ plugin: 'savvy-progress', key: 'agents' } as const, NO_AGE
 // Bumped each second while anything runs, so elapsed times redraw.
 const tick = atom({ plugin: 'savvy-progress', key: 'tick' } as const, 0)
 const isHidden = atom({ plugin: 'savvy-progress', key: 'isHidden' } as const, false)
+// The main loop's newest tool call: on mobile its row carries the progress card.
+const latestTool = atom({ plugin: 'savvy-progress', key: 'latestTool' } as const, '')
 // Whether the compact (mobile) pane shows the full task and subagent list.
 const isExpanded = atom({ plugin: 'savvy-progress', key: 'isExpanded' } as const, false)
 
@@ -260,6 +262,8 @@ export const register: Register = on => {
     try {
       if (inAgent === undefined) {
         await update($, activity, a => ({ ...a, tools: a.tools + 1, tool: e.tool }))
+        const callId = e.tool_use_id
+        if (callId) await update($, latestTool, () => callId)
       } else {
         await update($, agents, list =>
           list.map(a => (a.id === inAgent ? { ...a, tools: a.tools + 1, tool: e.tool } : a)),
@@ -327,6 +331,33 @@ export const register: Register = on => {
 
     return ran
   }).catch(($, e, next) => next(e))
+
+  // Mobile has no band above the input and seats no panes, so the bar rides
+  // in a card under the newest tool row, the bottom of the chat while working.
+  on('ui.render', { component: 'ToolUse' }, async ($, e, next) => {
+    if (e.surface !== 'mobile') return next(e)
+    const latest = await read($, latestTool)
+    if (latest === '' || e.props.tool_use_id !== latest || (await read($, isHidden))) {
+      return next(e)
+    }
+    const step = await read($, tick)
+    const p = progress(
+      await read($, tasks), await read($, activity), await read($, agents),
+      await $.clock.now(), step, 20,
+    )
+    const { Box, Text } = $.ui.resolve(e)
+    const row = await next(e)
+
+    return (
+      <Box flexDirection="column" borderStyle="round">
+        {row}
+        <Text color={p.tone === 'done' ? 'green' : p.tone === 'busy' ? 'cyan' : undefined} dimColor={p.tone === 'idle'}>
+          {p.bar}
+        </Text>
+        <Text>{p.label}</Text>
+      </Box>
+    )
+  })
 
   on('ui.render', { component: 'AbovePrompt' }, async ($, e, next) => {
     const step = await read($, tick)

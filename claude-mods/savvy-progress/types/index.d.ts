@@ -27,6 +27,7 @@ declare module 'claude-code' {
       tick: number
       isHidden: boolean
       isExpanded: boolean
+      latestTool: string
     }
   }
 }

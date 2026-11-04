@@ -151,3 +151,46 @@ test('a bar shows even with no tasks or subagents', async ($, on) => {
   expect((await busy.find({ type: 'Text', text: /Working/ }))?.text).toBe('Working · 3s · 0 tools')
   await busy.unmount()
 })
+
+test('on mobile the newest tool row carries the progress card', async ($, on) => {
+  const clock = mock.clock(on)
+  const kept = new Map<string, { value: unknown; version: number }>()
+  on('ui.status', () => ({ value: undefined }))
+  on('state.get', (_, e) => ({
+    value: kept.get(`${e.plugin}/${e.key}`) ?? { value: undefined, version: 0 },
+  }))
+  on('state.set', (_, e) => {
+    const id = `${e.plugin}/${e.key}`
+    const version = (kept.get(id)?.version ?? 0) + 1
+    kept.set(id, { value: e.value, version })
+    return { value: { isSet: true, version } }
+  })
+  on('agent.list', () => ({ value: [] }))
+  on('prompt.submit', (_, e) => ({ text: e.text }))
+  on('tool.call', () => ({ result: { stdout: '' } }))
+  // The engine's own row beneath the plugin.
+  on('ui.render', ($, e) => {
+    const { Text } = $.ui.resolve(e)
+    return <Text>engine row</Text>
+  })
+
+  await $.prompt.submit({ text: 'go' })
+  await $.tool.call({ tool: 'Bash', command: 'ls', tool_use_id: 'old' } as never)
+  await $.tool.call({ tool: 'Bash', command: 'pwd', tool_use_id: 'new' } as never)
+  await clock.advance(2_000)
+
+  const row = (id: string) => ({
+    plugin: 'savvy-progress', component: 'ToolUse', requestId: id, surface: 'mobile',
+    props: { tool_use_id: id, tool: 'Bash', input: {}, isRunning: false, isErrored: false, isInterrupted: false },
+  }) as const
+
+  const fresh = await $.ui.mount(row('new'))
+  expect(await fresh.find({ type: 'Text', text: /engine row/ })).toBeTruthy()
+  expect((await fresh.find({ type: 'Text', text: /Working/ }))?.text).toBe('Working · 2s · 2 tools')
+  await fresh.unmount()
+
+  const stale = await $.ui.mount(row('old'))
+  expect(await stale.find({ type: 'Text', text: /engine row/ })).toBeTruthy()
+  expect(await stale.find({ type: 'Text', text: /Working/ })).toBeFalsy()
+  await stale.unmount()
+})
