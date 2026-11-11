@@ -1,0 +1,1 @@
+{ "name": "savvy-progress", "version": "0.2.0", "description": "Progress band above the prompt plus a sidebar of tasks and subagent progress", "license": "MIT", "types": "./types/index.d.ts" }

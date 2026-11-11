@@ -1,0 +1,1 @@
+{ "name": "filetree", "version": "0.1.0", "description": "A pane beside the chat showing the working directory as a collapsible file tree", "license": "MIT", "types": "./types/index.d.ts" }

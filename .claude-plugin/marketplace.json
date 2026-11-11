@@ -1,0 +1,19 @@
+{
+  "name": "michi-mods",
+  "owner": {
+    "name": "000michi000"
+  },
+  "description": "Claude Code mods: a file tree pane and a progress bar with a task and subagent sidebar",
+  "plugins": [
+    {
+      "name": "filetree",
+      "source": "./claude-mods/filetree",
+      "description": "A pane showing the working directory as a collapsible file tree"
+    },
+    {
+      "name": "savvy-progress",
+      "source": "./claude-mods/savvy-progress",
+      "description": "An always-on progress bar plus a sidebar of task and subagent progress"
+    }
+  ]
+}
