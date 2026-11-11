@@ -11,3 +11,19 @@ subagent: its description, type, status, tool calls, elapsed time and current to
 synced each second from the engine's agent list. It opens by itself the first time
 a task list or a subagent appears. `/progress` opens it and shows the band again;
 `/progress reset` clears everything.
+
+## Install
+
+At the prompt of a Claude Code terminal session:
+
+```
+/plugin install savvy-progress --marketplace 000michi000/css-code-challenges-2502414
+```
+
+From a shell:
+
+```
+claude plugin install savvy-progress --marketplace 000michi000/css-code-challenges-2502414
+```
+
+Answer `y` to add the marketplace, then pick a scope (user scope loads it in every session). In the desktop app, click + next to the prompt box, then Plugins, Add marketplace with `000michi000/css-code-challenges-2502414`, then Add plugin.
